@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
 import { login, signup } from "./actions";
 
-export default function LoginPage() {
+export default async function LoginPage() {
   return (
     <form className="p-6 max-w-sm mx-auto bg-white rounded-lg shadow-md dark:bg-gray-800">
       <label

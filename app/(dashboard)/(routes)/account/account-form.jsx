@@ -49,7 +49,7 @@ export default function AccountForm({ user }) {
     try {
       setLoading(true);
 
-      const { error } = await supabase.from("profiles").upsert({
+      let { error } = await supabase.from("profiles").upsert({
         id: user?.id,
         full_name: fullname,
         username,
@@ -60,7 +60,9 @@ export default function AccountForm({ user }) {
       if (error) throw error;
       alert("Profile updated!");
     } catch (error) {
-      alert("Error updating the data!");
+      console.log(error);
+
+      alert("Error updating the data 2222!");
     } finally {
       setLoading(false);
     }

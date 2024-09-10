@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import AccountForm from "./account-form";
 import { createClient } from "@/utils/supabase/server";
 
