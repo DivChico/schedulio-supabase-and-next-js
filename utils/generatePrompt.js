@@ -1,6 +1,10 @@
 import React from "react";
+import { generatePrompts } from "./openai/openai";
 
-export default function generatePrompt(schedule) {
+export default async function generatePrompt(schedule) {
+  // const userQuery = "Tell me a joke!";
+  // const chatbotResponse = await generatePrompts("davinci", userQuery);
+  // console.log(chatbotResponse);
   const {
     wakeUpTime,
     bedTime,

@@ -58,8 +58,9 @@ export default function ScheduleForm({ onSubmit }) {
       goals,
       personType,
     };
+    console.log("hi");
+
     generatePrompt(formData);
-    // createSchedule(formData);
   };
 
   return (

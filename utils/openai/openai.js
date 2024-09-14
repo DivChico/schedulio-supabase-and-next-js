@@ -1,13 +1,13 @@
-import OpenAI from "openai";
+// import { OpenAI } from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY, // This is the default and can be omitted
-});
+// const openai = new OpenAI(process.env.NEXT_PUBLIC_OPENAI_API_KEY);
 
-async function main() {
-  const chatCompletion = await client.chat.completions.create({
-    messages: [{ role: "user", content: "Say this is a test" }],
-    model: "gpt-3.5-turbo",
-  });
-}
-main();
+// export async function generatePrompts(engine, prompt) {
+//   const response = await openai.createCompletion({
+//     engine: engine,
+//     prompt: prompt,
+//     max_tokens: 1024,
+//     temperature: 0.5,
+//   });
+//   return response.choices[0].text.trim();
+// }
