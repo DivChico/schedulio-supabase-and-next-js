@@ -7,9 +7,9 @@ export default async function DashboradLayout({ children }) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return redirect("/login");
-  }
+  // if (!user) {
+  //   return redirect("/login");
+  // }
   return (
     <html lang="en">
       <body>{children}</body>
