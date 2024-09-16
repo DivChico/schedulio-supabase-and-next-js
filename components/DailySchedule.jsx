@@ -1,257 +1,227 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import { useEffect, useState, useRef } from "react";
 
-// Helper function to convert time to 12-hour format with AM/PM
-const formatTime12Hour = (dateTime) => {
-  const date = new Date(dateTime);
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+// Extracted utility functions
+const formatTime = (hours, minutes) => {
   const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12; // Convert 0 hours to 12 AM
-  return `${hours}:${minutes} ${ampm}`;
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
 };
 
-// Helper function to calculate percentage position on the time axis
-const timeToPercentage = (dateTime) => {
-  const date = new Date(dateTime);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  return ((hours + minutes / 60) * 100) / 24;
-};
-
-// Generate time labels for the full day in 30-minute intervals
-const generateTimeLabels = () => {
-  const times = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const date = new Date();
-      date.setHours(hour, minute, 0);
-      times.push(formatTime12Hour(date));
-    }
-  }
-  return times;
-};
-
-// Function to calculate card height based on event time
-const getCardHeight = (start, end) => {
+const calculateEventHeight = (start, end) => {
   const startTime = new Date(start);
   const endTime = new Date(end);
-  const duration = (endTime - startTime) / 60000; // Duration in minutes
-  return Math.max(duration, 30); // Minimum height of 30px
+  const diffMinutes = (endTime - startTime) / 1000 / 60;
+  return Math.max((diffMinutes / 60) * 50, 40); // Minimum height for short tasks
 };
 
-// Find free time intervals between events
-const calculateFreeTimeIntervals = (events) => {
-  const sortedEvents = [...events].sort(
-    (a, b) => new Date(a.startDate) - new Date(b.startDate)
-  );
-  const freeIntervals = [];
+const Header = ({ greeting, formattedDate, currentTime }) => (
+  <header className="bg-gray-800 text-white p-4">
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-2xl">{greeting}</h1>
+        <p>{formattedDate}</p>
+      </div>
+      <div className="text-lg">{currentTime}</div>
+    </div>
+  </header>
+);
 
-  let startOfDay = new Date(sortedEvents[0]?.startDate);
-  startOfDay.setHours(0, 0, 0, 0);
-
-  if (sortedEvents.length > 0) {
-    const endOfDay = new Date(sortedEvents[sortedEvents.length - 1].endDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Handle free time before the first event
-    if (startOfDay < new Date(sortedEvents[0].startDate)) {
-      freeIntervals.push({
-        startDate: startOfDay.toISOString(),
-        endDate: new Date(sortedEvents[0].startDate).toISOString(),
-        title: "Free Time",
-      });
-    }
-
-    // Handle gaps between events
-    for (let i = 0; i < sortedEvents.length - 1; i++) {
-      const end = new Date(sortedEvents[i].endDate);
-      const start = new Date(sortedEvents[i + 1].startDate);
-      if (end < start) {
-        freeIntervals.push({
-          startDate: end.toISOString(),
-          endDate: start.toISOString(),
-          title: "Free Time",
-        });
-      }
-    }
-
-    // Handle free time after the last event
-    if (new Date(sortedEvents[sortedEvents.length - 1].endDate) < endOfDay) {
-      freeIntervals.push({
-        startDate: new Date(
-          sortedEvents[sortedEvents.length - 1].endDate
-        ).toISOString(),
-        endDate: endOfDay.toISOString(),
-        title: "Free Time",
-      });
-    }
-  }
-
-  return freeIntervals;
-};
-
-const StyledTimeAxisCalendar = ({ events, date, onEdit, onDelete }) => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update the current time every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // Update every minute
-    return () => clearInterval(interval);
-  }, []);
-
-  // Filter events for the current day
-  const dayEvents = events.filter(
-    (event) =>
-      new Date(event.startDate).toDateString() === new Date(date).toDateString()
-  );
-
-  // Calculate free time intervals
-  const freeTimeIntervals = calculateFreeTimeIntervals(dayEvents);
-
-  // Combine events and free time intervals
-  const combinedEvents = [...dayEvents, ...freeTimeIntervals].sort(
-    (a, b) => new Date(a.startDate) - new Date(b.startDate)
-  );
-
-  // Generate time labels
-  const times = generateTimeLabels();
-
-  // Red line position for current time
-  const currentLinePosition = timeToPercentage(currentTime);
+const EventCard = ({ event, onClick, onEdit, onDelete }) => {
+  const start = new Date(event.startDate);
+  const end = new Date(event.endDate);
+  const height = calculateEventHeight(start, end);
+  const top = ((start.getHours() * 60 + start.getMinutes()) / 1440) * 100 + "%";
 
   return (
-    <div className="relative w-full h-screen bg-gray-100 overflow-y-auto">
-      {/* Red line for current time */}
-      <div
-        className="absolute w-full h-1 bg-red-600"
-        style={{ top: `${currentLinePosition}%`, zIndex: 10 }}
-      ></div>
-
-      {/* Render Time Axis */}
-      <div className="absolute left-0 top-0 w-24 bg-gray-200 border-r border-gray-300 h-full">
-        {times.map((time, index) => {
-          const timePercentage = timeToPercentage(
-            `1970-01-01T${time.split(" ")[0]}:00`
-          );
-          return (
-            <div
-              key={index}
-              className="w-full text-xs border-b border-gray-300"
-              style={{
-                position: "absolute",
-                top: `${timePercentage}%`,
-                height: "30px", // Fixed height for each interval
-                backgroundColor: "transparent",
-              }}
-            >
-              <span className="block text-gray-500 px-2">{time}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Render Combined Events and Free Time */}
-      {combinedEvents.map((event) => {
-        const startPercent = timeToPercentage(event.startDate);
-        const endPercent = event.endDate
-          ? timeToPercentage(event.endDate)
-          : startPercent + 2; // Ensure at least 1 hour duration
-        const eventHeight = getCardHeight(event.startDate, event.endDate) + 10; // Padding and margin
-
-        return (
-          <div
-            key={event.startDate}
-            className="relative ml-24 mb-5"
-            style={{ top: `${startPercent}%`, height: `${eventHeight}px` }}
+    <div
+      className="absolute left-0 w-full md:w-4/5 lg:w-11/12 bg-blue-500 text-white border border-gray-300 shadow-md rounded-lg p-3 cursor-pointer"
+      style={{ top, height: `${height}px`, marginTop: "2px" }}
+      onClick={() => onClick(event)}
+    >
+      <div className="flex justify-between items-center">
+        <h4 className="font-semibold">{event.title || "Untitled Event"}</h4>
+        <div className="space-x-2">
+          <button
+            className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(event.id);
+            }}
           >
-            {/* Time label */}
-            <div className="absolute -left-24 top-0 w-20 text-gray-600 text-xs flex items-center justify-end pr-2">
-              {formatTime12Hour(event.startDate)}
-            </div>
-
-            {/* Event Block */}
-            <div
-              className={`bg-${
-                event.title === "Free Time" ? "blue-100" : "white"
-              } text-gray-800 rounded-lg p-4 shadow-lg border border-gray-300 relative flex flex-col`}
-              style={{
-                height: `${eventHeight}px`,
-                padding: "10px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              {/* Event Title */}
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold text-lg">
-                  {event.title || "Untitled Event"}
-                </p>
-                {event.title !== "Free Time" && (
-                  <div className="flex space-x-2">
-                    {/* Edit Button */}
-                    <button
-                      onClick={() => onEdit(event.id)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs transition duration-300"
-                    >
-                      Edit
-                    </button>
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => onDelete(event.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition duration-300"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Event Details */}
-              <p className="text-sm mb-1">
-                <strong>Time:</strong> {formatTime12Hour(event.startDate)} -{" "}
-                {event.endDate ? formatTime12Hour(event.endDate) : "Ongoing"}
-              </p>
-              {event.allDay && (
-                <p className="text-sm mb-1">
-                  <strong>All Day Event</strong>
-                </p>
-              )}
-              {event.rRule && (
-                <p className="text-sm mb-1">
-                  <strong>Recurrence:</strong> {event.rRule}
-                </p>
-              )}
-              {event.exDate && (
-                <p className="text-sm mb-1">
-                  <strong>Excluded Dates:</strong> {event.exDate}
-                </p>
-              )}
-            </div>
-          </div>
-        );
-      })}
+            Edit
+          </button>
+          <button
+            className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(event.id);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      <p className="text-sm">
+        {`${formatTime(start.getHours(), start.getMinutes())} - ${formatTime(
+          end.getHours(),
+          end.getMinutes()
+        )}`}
+      </p>
     </div>
   );
 };
 
-StyledTimeAxisCalendar.propTypes = {
-  events: PropTypes.arrayOf(
-    PropTypes.shape({
-      startDate: PropTypes.string.isRequired, // ISO 8601 date string
-      endDate: PropTypes.string, // Optional ISO 8601 date string
-      title: PropTypes.string, // Optional title for the event
-      allDay: PropTypes.bool, // Optional flag for all-day events
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]), // Optional ID
-      rRule: PropTypes.string, // Optional recurrence rule
-      exDate: PropTypes.string, // Optional excluded dates
-    })
-  ).isRequired,
-  date: PropTypes.string.isRequired, // ISO date string for the day being viewed
-  onEdit: PropTypes.func.isRequired, // Function to handle editing an event
-  onDelete: PropTypes.func.isRequired, // Function to handle deleting an event
+const StyledTimeAxisCalendar = ({ events, date, onEdit, onDelete }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [currentTask, setCurrentTask] = useState(null);
+  const [todos, setTodos] = useState([
+    { id: 1, text: "Todo 1", done: false },
+    { id: 2, text: "Todo 2", done: false },
+  ]);
+  const timetableRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    if (timetableRef.current) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const scrollPosition = currentHour * 50 + 200;
+      timetableRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  const handleTaskClick = (task) => {
+    setCurrentTask(task);
+    setShowSidebar(true);
+  };
+
+  const handleOutsideClick = (e) => {
+    if (e.target.closest(".sidebar") === null && showSidebar) {
+      setShowSidebar(false);
+    }
+  };
+
+  const handleTodoToggle = (id) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.id === id ? { ...todo, done: !todo.done } : todo
+      )
+    );
+  };
+
+  const timeSlots = [];
+  for (let hour = 0; hour < 24; hour++) {
+    timeSlots.push({ time: formatTime(hour, 0), hour, minute: 0 });
+  }
+
+  const now = new Date();
+  const currentHour = now.getHours();
+  const greeting = currentHour < 12 ? "Good Morning" : "Good Evening";
+  const formattedDate = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const currentTime = formatTime(now.getHours(), now.getMinutes());
+
+  return (
+    <div
+      className="relative flex flex-col min-h-screen"
+      onClick={handleOutsideClick}
+    >
+      <Header
+        greeting={greeting}
+        formattedDate={formattedDate}
+        currentTime={currentTime}
+      />
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-blue-500"></div>
+        </div>
+      ) : (
+        <div className="relative flex-1 overflow-y-scroll" ref={timetableRef}>
+          <div className="absolute w-full">
+            <div className="absolute left-0 w-20 border-r border-gray-300">
+              {timeSlots.map((slot, index) => (
+                <div
+                  key={index}
+                  className="h-12 text-gray-500 text-right pr-2 text-sm"
+                >
+                  {slot.time}
+                </div>
+              ))}
+            </div>
+            <div className="ml-20 relative">
+              {timeSlots.map((slot, index) => (
+                <div
+                  key={index}
+                  className="h-12 border-b border-gray-200"
+                ></div>
+              ))}
+              {events
+                .filter(
+                  (event) =>
+                    new Date(event.startDate).toISOString().split("T")[0] ===
+                    date
+                )
+                .map((event, index) => (
+                  <EventCard
+                    key={index}
+                    event={event}
+                    onClick={handleTaskClick}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {showSidebar && (
+        <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-lg p-4 z-50 sidebar">
+          <button
+            className="text-red-500 float-right"
+            onClick={() => setShowSidebar(false)}
+          >
+            X
+          </button>
+          <h2 className="text-xl font-bold">{currentTask?.title}</h2>
+          <p className="text-gray-500">{`Start: ${formatTime(
+            new Date(currentTask?.startDate).getHours(),
+            new Date(currentTask?.startDate).getMinutes()
+          )}`}</p>
+          <p className="text-gray-500">{`End: ${formatTime(
+            new Date(currentTask?.endDate).getHours(),
+            new Date(currentTask?.endDate).getMinutes()
+          )}`}</p>
+          <div className="mt-4">
+            <h3 className="font-semibold">Task Todos</h3>
+            {todos.map((todo) => (
+              <p
+                key={todo.id}
+                onClick={() => handleTodoToggle(todo.id)}
+                className={`cursor-pointer ${
+                  todo.done ? "line-through text-green-500" : "text-gray-700"
+                }`}
+              >
+                {todo.text}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default StyledTimeAxisCalendar;

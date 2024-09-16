@@ -1,6 +1,6 @@
 "use client";
 
-import StyledTimeAxisCalendar from "@/components/DailySchedule";
+import StyledTimeAxisCalendar from "@/components/MianCalender";
 import React from "react";
 
 const page = () => {

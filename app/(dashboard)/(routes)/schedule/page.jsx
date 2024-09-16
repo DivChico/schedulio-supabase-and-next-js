@@ -24,7 +24,7 @@ const Page = () => {
       resourceEditable: true,
       overlap: true,
       display: "block",
-      backgroundColor: "#FFCC00",
+      backgroundColor: "#FFAB00",
       borderColor: "#FFCC00",
       textColor: "#000000",
       extendedProps: {
