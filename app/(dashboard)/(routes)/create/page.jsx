@@ -1,6 +1,8 @@
 "use client";
 import generatePrompt from "@/utils/generatePrompt";
+import createSchedule from "@/utils/createSchedule";
 import { useState } from "react";
+import addTasks from "@/utils/addTasks";
 
 export default function ScheduleForm({ onSubmit }) {
   const [wakeUpTime, setWakeUpTime] = useState("");
@@ -45,7 +47,7 @@ export default function ScheduleForm({ onSubmit }) {
     setGoals(goals.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     const formData = {
       wakeUpTime,
@@ -58,10 +60,15 @@ export default function ScheduleForm({ onSubmit }) {
       goals,
       personType,
     };
-    console.log("hi");
 
-    generatePrompt(formData);
-  };
+    const prompt = await generatePrompt(formData);
+    const scheduleObj = await createSchedule();
+    console.log(scheduleObj.id);
+
+    addTasks(scheduleObj.id);
+
+    console.log(prompt);
+  }
 
   return (
     <form

@@ -104,8 +104,9 @@ const StyledTimeAxisCalendar = ({ events, date, onEdit, onDelete }) => {
               {events
                 .filter(
                   (event) =>
-                    new Date(event.startDate).toISOString().split("T")[0] ===
-                    date
+                    event.startDate.toISOString().split("T")[0] === date
+                  // new Date(event.startDate).toISOString().split("T")[0] ===
+                  // date
                 )
                 .map((event, index) => (
                   <EventCard

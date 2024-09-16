@@ -13,7 +13,6 @@ export default function AccountForm({ user }) {
   const getProfile = useCallback(async () => {
     try {
       setLoading(true);
-      console.log(user.id);
 
       let { data, error, status } = await supabase
         .from("profiles")

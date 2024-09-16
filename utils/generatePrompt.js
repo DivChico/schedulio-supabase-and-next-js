@@ -30,6 +30,6 @@ export default async function generatePrompt(schedule) {
   const prompt = `I am a ${personTypeText}, and I wake up at ${wakeUpTime} and go to bed at ${bedTime}. I work from ${workStartTime} to ${workEndTime}, with a lunch break from ${lunchStartTime} to ${lunchEndTime}. ${
     commitmentDetails ? `I have commitments like ${commitmentDetails}.` : ""
   } I would like to ${goalList}. Please create a daily schedule for me that balances work, personal tasks, and relaxation.`;
-  console.log(prompt);
+  // console.log(prompt);
   return prompt;
 }
