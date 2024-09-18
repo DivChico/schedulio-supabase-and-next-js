@@ -85,38 +85,41 @@ const StyledTimeAxisCalendar = ({ events, date, onEdit, onDelete }) => {
         <div className="relative flex-1 overflow-y-scroll" ref={timetableRef}>
           <div className="absolute w-full">
             <div className="absolute left-0 w-20 border-r border-gray-300">
-              {timeSlots.map((slot, index) => (
+              {/* {timeSlots.map((slot, index) => (
                 <div
                   key={index}
                   className="h-12 text-gray-500 text-right pr-2 text-sm"
                 >
                   {slot.time}
                 </div>
-              ))}
+              ))} */}
             </div>
-            <div className="ml-20 relative">
-              {timeSlots.map((slot, index) => (
+            <div className=" flex flex-col items-center justify-center">
+              {/* {timeSlots.map((slot, index) => (
                 <div
                   key={index}
                   className="h-12 border-b border-gray-200"
                 ></div>
-              ))}
+              ))} */}
               {events
-                .filter(
-                  (event) =>
-                    event.startDate.toISOString().split("T")[0] === date
-                  // new Date(event.startDate).toISOString().split("T")[0] ===
-                  // date
-                )
-                .map((event, index) => (
-                  <EventCard
-                    key={index}
-                    event={event}
-                    onClick={handleTaskClick}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                ))}
+                // .filter(
+                //   (event) => event.startDate?.split("T")[0] === date
+                //   // new Date(event.startDate).toISOString().split("T")[0] ===
+                //   // date
+                // )
+                .map((event, index) => {
+                  console.log(event);
+
+                  return (
+                    <EventCard
+                      key={index}
+                      event={event}
+                      onClick={handleTaskClick}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                    />
+                  );
+                })}
             </div>
           </div>
         </div>
